@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Room {
+  id         String   @id @default(uuid())
+  code       String   @unique
+  hostId     String
+  status     String   @default("waiting")
+  maxPlayers Int
+  vsAI       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  currentTurnIndex   Int      @default(0)
+  round              Int      @default(1)
+  bigDiceActive      Boolean  @default(false)
+  gymsClosedActive   Boolean  @default(false)
+  ballShortageActive Boolean  @default(false)
+  bidoofTimeActive   Boolean  @default(false)
+  blockedNodeId      String?
+  pendingItemNodeId  String?
+
+  players     Player[]
+  boardEvents BoardEvent[]
+  gameEvents  GameEvent[]
+}
+
+model Player {
+  id            String  @id @default(uuid())
+  name          String
+  avatar        String
+  turnOrder     Int
+  boardPosition String  @default("e")
+  medals        Int     @default(0)
+  gymsWon       String[] @default([])
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  pokemons  PlayerPokemon[]
+  inventory InventoryItem[]
+}
+
+model PlayerPokemon {
+  id        String  @id @default(uuid())
+  species   String
+  type1     String
+  type2     String?
+  bp        Float
+  isAce     Boolean @default(false)
+  isFainted Boolean @default(false)
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  heldItemId String?        @unique
+  heldItem   InventoryItem? @relation(fields: [heldItemId], references: [id])
+}
+
+model InventoryItem {
+  id   String @id @default(uuid())
+  type String
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  heldByPokemon PlayerPokemon?
+}
+
+model BoardEvent {
+  id             String @id @default(uuid())
+  type           String
+  boardPosition  Int
+  data           Json
+  expiresAtRound Int
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+model GameEvent {
+  id        String   @id @default(uuid())
+  type      String
+  data      Json
+  round     Int
+  createdAt DateTime @default(now())
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
