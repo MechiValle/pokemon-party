@@ -24,6 +24,7 @@ model Room {
   bidoofTimeActive   Boolean  @default(false)
   blockedNodeId      String?
   pendingItemNodeId  String?
+  pendingEggNodeId   String?
 
   players     Player[]
   boardEvents BoardEvent[]
@@ -31,12 +32,12 @@ model Room {
 }
 
 model Player {
-  id            String  @id @default(uuid())
+  id            String   @id @default(uuid())
   name          String
   avatar        String
   turnOrder     Int
-  boardPosition String  @default("e")
-  medals        Int     @default(0)
+  boardPosition String   @default("e")
+  medals        Int      @default(0)
   gymsWon       String[] @default([])
 
   roomId String
@@ -47,13 +48,15 @@ model Player {
 }
 
 model PlayerPokemon {
-  id        String  @id @default(uuid())
-  species   String
-  type1     String
-  type2     String?
-  bp        Float
-  isAce     Boolean @default(false)
-  isFainted Boolean @default(false)
+  id                 String  @id @default(uuid())
+  species            String
+  type1              String
+  type2              String?
+  bp                 Float
+  isAce              Boolean @default(false)
+  isFainted          Boolean @default(false)
+  isEgg              Boolean @default(false)
+  eggStepsRemaining  Int?
 
   playerId String
   player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
@@ -75,7 +78,7 @@ model InventoryItem {
 model BoardEvent {
   id             String @id @default(uuid())
   type           String
-  boardPosition  Int
+  boardPosition  String
   data           Json
   expiresAtRound Int
 

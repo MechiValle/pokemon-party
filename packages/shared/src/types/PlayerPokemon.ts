@@ -13,5 +13,7 @@ export interface PlayerPokemon {
   bp: number;
   isAce: boolean;
   isFainted: boolean;
+  isEgg: boolean;
+  eggStepsRemaining: number | null;
   heldItemId: string | null;
 }

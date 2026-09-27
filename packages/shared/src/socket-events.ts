@@ -112,12 +112,13 @@ export interface ServerToClientEvents {
   "gym:type-choice-needed": (payload: { pokemon: PlayerPokemon }) => void;
   "gym:battle-result": (payload: {
     playerId: string;
-    gymNodeId: string;
-    leaderName: string;
+    context: "gym" | "rival" | "cresselia" | "darkrai";
+    nodeId: string;
     playerSpecies: string;
     playerEffectiveBp: number;
-    gymSpecies: string;
-    gymEffectiveBp: number;
+    opponentName: string;
+    opponentSpecies: string;
+    opponentEffectiveBp: number;
     playerWon: boolean;
   }) => void;
 

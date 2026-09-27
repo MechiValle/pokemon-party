@@ -46,6 +46,7 @@ function App() {
   const [fateChoiceNeeded, setFateChoiceNeeded] = useState<
     RoundEventType[] | null
   >(null);
+  const [isMoving, setIsMoving] = useState(false);
 
   useEffect(() => {
     function onConnect() {
@@ -83,6 +84,9 @@ function App() {
         ),
       );
       setRemainingSteps(payload.remainingSteps);
+      if (payload.remainingSteps > 0 && diceValue === null) {
+        setDiceValue(payload.remainingSteps);
+      }
     }
     function onTurnEnded(payload: { room: Room }) {
       setRoom(payload.room);
@@ -131,17 +135,18 @@ function App() {
     }
     function onBattleResult(payload: {
       playerId: string;
-      leaderName: string;
+      context: 'gym' | 'rival' | 'cresselia' | 'darkrai';
       playerSpecies: string;
       playerEffectiveBp: number;
-      gymSpecies: string;
-      gymEffectiveBp: number;
+      opponentName: string;
+      opponentSpecies: string;
+      opponentEffectiveBp: number;
       playerWon: boolean;
     }) {
       const playerName =
         players.find((p) => p.id === payload.playerId)?.name ?? 'Someone';
       setLastBattleResult(
-        `${playerName}'s ${payload.playerSpecies} (${payload.playerEffectiveBp} BP) vs ${payload.leaderName}'s ${payload.gymSpecies} (${payload.gymEffectiveBp} BP) — ${payload.playerWon ? 'WON!' : 'lost.'}`,
+        `${playerName}'s ${payload.playerSpecies} (${payload.playerEffectiveBp} BP) vs ${payload.opponentName}'s ${payload.opponentSpecies} (${payload.opponentEffectiveBp} BP) — ${payload.playerWon ? 'WON!' : 'lost.'}`,
       );
     }
     function onCenterHealed(payload: { playerId: string }) {
@@ -208,6 +213,18 @@ function App() {
         message = 'Ball Shortage: no catching this round';
       } else if (payload.eventType === 'bidoof_time') {
         message = 'Bidoof Time: every encounter is a Bidoof this round';
+      } else if (payload.eventType === 'rival_battle') {
+        message = `Rival Battle: Barry appeared at node ${payload.detail?.nodeId}`;
+      } else if (payload.eventType === 'sweet_dreams') {
+        message = `Sweet Dreams? Cresselia at ${payload.detail?.cresseliaNode}, Darkrai at ${payload.detail?.darkraiNode}`;
+      } else if (payload.eventType === 'egg') {
+        if (payload.detail?.hatched) {
+          message = `${nameOf(payload.detail?.playerId)}'s egg hatched into a ${payload.detail?.hatched}!`;
+        } else {
+          message = `An egg appeared at node ${payload.detail?.nodeId}`;
+        }
+      } else if (payload.eventType === 'meteor') {
+        message = `METEOR!!! struck node ${payload.detail?.nodeId}`;
       }
       setLastRoundEvent(message);
     }
@@ -268,7 +285,7 @@ function App() {
       socket.off('event:fate-choice-needed', onFateChoiceNeeded);
       socket.off('event:fate-chosen', onFateChosen);
     };
-  }, [players, myPlayerId]);
+  }, [players, myPlayerId, diceValue]);
 
   function handleCreateRoom() {
     socket.emit(
@@ -337,8 +354,10 @@ function App() {
   }
 
   function handleMove(nextNodeId: string) {
-    if (!room) return;
+    if (!room || isMoving) return;
+    setIsMoving(true);
     socket.emit('turn:move', { roomId: room.id, nextNodeId }, (response) => {
+      setIsMoving(false);
       if ('error' in response) alert(response.error);
     });
   }
@@ -471,11 +490,15 @@ function App() {
             {room.ballShortageActive && 'Ball Shortage '}
             {room.bidoofTimeActive && 'Bidoof Time '}
             {room.blockedNodeId && `Psyduck@${room.blockedNodeId} `}
+            {room.pendingItemNodeId && `Item@${room.pendingItemNodeId} `}
+            {room.pendingEggNodeId && `Egg@${room.pendingEggNodeId} `}
             {!room.bigDiceActive &&
               !room.gymsClosedActive &&
               !room.ballShortageActive &&
               !room.bidoofTimeActive &&
               !room.blockedNodeId &&
+              !room.pendingItemNodeId &&
+              !room.pendingEggNodeId &&
               'none'}
           </p>
           <ul>
@@ -512,7 +535,8 @@ function App() {
               isMyTurn &&
               diceValue !== null &&
               remainingSteps > 0 &&
-              !isWaitingOnMe
+              !isWaitingOnMe &&
+              !isMoving
                 ? handleMove
                 : undefined
             }
@@ -523,7 +547,9 @@ function App() {
             <ul>
               {myParty.map((poke) => (
                 <li key={poke.id}>
-                  {poke.species} — BP {poke.bp} — {poke.types.join('/')}
+                  {poke.isEgg
+                    ? `Egg (${poke.eggStepsRemaining} steps left)`
+                    : `${poke.species} — BP ${poke.bp} — ${poke.types.join('/')}`}
                   {poke.isAce && ' (Ace)'}
                   {poke.isFainted && ' (fainted)'}
                 </li>
@@ -567,7 +593,7 @@ function App() {
                     variant='outline'
                     onClick={() => handleEncounterDecision('replace', poke.id)}
                   >
-                    Replace {poke.species}
+                    Replace {poke.isEgg ? 'Egg' : poke.species}
                   </Button>
                 ))}
                 <Button

@@ -15,4 +15,5 @@ export interface Room {
   bidoofTimeActive: boolean;
   blockedNodeId: string | null;
   pendingItemNodeId: string | null;
+  pendingEggNodeId: string | null;
 }

@@ -7,7 +7,11 @@ export type RoundEventType =
   | "roar_of_time"
   | "psyduck_blockade"
   | "everyone_dies"
-  | "choose_your_fate";
+  | "choose_your_fate"
+  | "rival_battle"
+  | "sweet_dreams"
+  | "egg"
+  | "meteor";
 
 export interface RoundEventDef {
   type: RoundEventType;
@@ -24,6 +28,10 @@ export const ROUND_EVENTS: RoundEventDef[] = [
   { type: "psyduck_blockade", weight: 10 },
   { type: "everyone_dies", weight: 2 },
   { type: "choose_your_fate", weight: 10 },
+  { type: "rival_battle", weight: 10 },
+  { type: "sweet_dreams", weight: 10 },
+  { type: "egg", weight: 10 },
+  { type: "meteor", weight: 10 },
 ];
 
 export const CHOOSABLE_EVENTS: RoundEventType[] = ROUND_EVENTS.map((e) => e.type).filter(

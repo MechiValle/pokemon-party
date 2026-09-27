@@ -39,6 +39,8 @@ export function toPlayerPokemonDTO(pokemon: PrismaPlayerPokemon): PlayerPokemon 
     bp: pokemon.bp,
     isAce: pokemon.isAce,
     isFainted: pokemon.isFainted,
+    isEgg: pokemon.isEgg,
+    eggStepsRemaining: pokemon.eggStepsRemaining,
     heldItemId: pokemon.heldItemId,
   };
 }
